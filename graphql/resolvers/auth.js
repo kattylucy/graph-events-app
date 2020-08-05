@@ -25,25 +25,19 @@ module.exports = {
         })
         .catch(err => { throw err})
     },
-    login: ({email, password}) => {
-        User.findOne({email})
-        .then(user => {
-            if(!user){
-                throw new Error('User does not exist')
-            }
-            bcrypt.compare(password, user.password)
-            .then(password => {
-                if(!password){
-                    throw new Error('Incorrect credentials')
-                }
-                const token = jwt.sign({userId: user._id, email: user.email}, 'somesupersecretkey', {
-                    expiresIn: '1h'
-                });
-                return { userId: user._id, token, tokenExpiration:1}
-            })
-            .catch(errPassword => { throw errPassword})
-        })
-        .catch(err => { throw err })
+    login: async ({email, password}) => {
+        const user = await User.findOne({email: email})
+        if(!user){
+            throw new Error('Invalid credentials');
+        }
+        const isEqual = await bcrypt.compare(password, user.password);
+        if(!isEqual){
+            throw new Error('invalid credentials');
+        }
+        const token = jwt.sign({ userId: user._id, email:user.email }, 'supersecrettoken', {
+            expiresIn: '1h'
+        });
 
+        return {userId: user._id, token: token, tokenExpiration:1}
     }
 }
